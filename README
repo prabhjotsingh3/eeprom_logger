@@ -1,0 +1,85 @@
+EERPOM Logger Project Info
+
+Directory Structure
+ - app/
+ - build/
+ - driver/
+ - include/
+ - lib/
+ - logger
+ - Makefile
+ - README
+
+
+app/ 		-> Contains the main application
+build/ 		-> Contains the build results
+driver/ 	-> Contains the MEE(Memory Emulated EEPROM) and EEPROM(24LC04) drivers
+include/ 	-> Contains all the header files
+lib/ 		->Contains library code for record format,parsing,etc.
+logger 		-> Final executable
+Makefile 	-> Parent Makefile
+README 		-> File you are currently reading
+
+
+Compilation Process
+
+Type -> make logger
+
+Initiates the build process.
+First it does some preparations(Creating build directory,etc.)
+One by one it compiles all the files from each sub-directory
+Then it finally links all the object files to yield final executable -> logger
+
+Makefile Structure
+
+The parent makefile first defines some necessary variables(like CC,CFLAGS, BUILDDIR,etc.)
+
+Then it "includes" all the Makefiles in the sub-directories.
+
+By include I mean that the makefiles are copied into the parent Makefiles; just like C-preprocessor. 
+This is important to keep in mind because now in the child Makefiles every filepath,etc. should be referred from
+the location of parent Makefile rather than the location of child Makefile.
+
+
+Child Makefile first defines the variable that stores the path of the corresponding source directory.
+E.g., APP_DIR := ./app
+
+Then it adds all the object files to be compiled to the OBJECTS variable.
+It uses patsubst function here that takes all the .c files in the directory and replaces the .c with .o. It also appends the build directory 
+to the object file name.
+
+patsubst format - $(patsubst pattern,replacement,text)
+It finds the whitespace-separated words in 'text' that matches 'pattern' and replaces them with 'replacement'.
+'pattern' may contain a "%" which acts as a wildcard, matching any number of characters within the word.
+If 'replacement' also contains a "%", the "%" is replaced by the same text the matched the "%" in pattern.
+
+E.g.,
+OBJECTS += $(patsubst $(APP_DIR)/%.c, $(OBJECTDIR)/%.o, $(wildcard $(APP_DIR)/*.c))
+
+
+Note that it is necessary to use $(APP_DIR) before using the wildcard or else the make will end up searching for files in the
+root directory of project rather than the intended source folder.
+
+For the 'text' part in patsubst I used wildcard function.
+wildcard is another gift from make utility. The string returned by wildcard function, used anywhere in a makefile, is replaced by a space-separated list 
+of names of existing files that match one of the given file name 'patterns'. Thus we use this function to get the list of all c files in directory represented by
+$(APP_DIR)
+
+Next it uses implicit pattern rule which says %.o from %.c. % here means like * in linux.
+
+$(OBJECTDIR)/%.o: $(APP_DIR)/%.c
+        $(CC) $(CFLAGS) -o $@ $<
+
+in the recipe that follows contains the following important 'automatic' variable.
+			$@ evaluates to %.o, 
+			$< evaluates to %.c (the first item in dependency list)
+
+The other one is $^ that evaluates to filenames of all the prerequisites
+
+
+
+
+
+
+
+
